@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import ClientesTable from "@/components/clientes/ClientesTable";
 
 export const dynamic = "force-dynamic";
@@ -12,27 +12,35 @@ export default async function ClientesPage({
   const estado = searchParams.estado || "";
   const page = parseInt(searchParams.page || "1");
   const limit = 50;
-  const skip = (page - 1) * limit;
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
-  const where: Record<string, unknown> = {};
-  if (q) {
-    where.OR = [
-      { nombre: { contains: q } },
-      { telefono: { contains: q } },
-      { instagram: { contains: q } },
-    ];
-  }
-  if (estado) where.estadoBusqueda = estado;
+  let query = supabase
+    .from("clientes")
+    .select("*", { count: "exact" })
+    .order("proximo_contacto", { ascending: true, nullsFirst: false })
+    .order("creado_en", { ascending: false })
+    .range(from, to);
 
-  const [clientes, total] = await Promise.all([
-    prisma.cliente.findMany({
-      where,
-      orderBy: [{ proximoContacto: "asc" }, { creadoEn: "desc" }],
-      skip,
-      take: limit,
-    }),
-    prisma.cliente.count({ where }),
-  ]);
+  if (q) query = query.or(`nombre.ilike.%${q}%,telefono.ilike.%${q}%,instagram.ilike.%${q}%`);
+  if (estado) query = query.eq("estado_busqueda", estado);
+
+  const { data: clientesRaw, count } = await query;
+  const total = count ?? 0;
+
+  // Map snake_case → camelCase for components
+  const clientes = (clientesRaw ?? []).map((c) => ({
+    ...c,
+    fechaNacimiento: c.fecha_nacimiento,
+    modoPago: c.modo_pago,
+    tipoBuscado: c.tipo_buscado,
+    valorPresupuesto: c.valor_presupuesto,
+    estadoBusqueda: c.estado_busqueda,
+    proximoContacto: c.proximo_contacto,
+    importadoDeExcel: c.importado_de_excel,
+    creadoEn: c.creado_en,
+    actualizadoEn: c.actualizado_en,
+  }));
 
   return (
     <div className="space-y-6">

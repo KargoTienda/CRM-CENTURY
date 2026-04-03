@@ -1,14 +1,27 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import LeadsClient from "@/components/leads/LeadsClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeadsInstagramPage() {
-  const leads = await prisma.lead.findMany({
-    where: { origen: "INSTAGRAM_PAUTA" },
-    orderBy: { creadoEn: "desc" },
-    include: { proyecto: { select: { id: true, nombre: true } } },
-  });
+  const { data: leadsRaw } = await supabase
+    .from("leads")
+    .select("*, proyectos!proyecto_id(id, nombre)")
+    .eq("origen", "INSTAGRAM_PAUTA")
+    .order("creado_en", { ascending: false });
+
+  const leads = (leadsRaw ?? []).map(({ proyectos, ...l }) => ({
+    ...l,
+    propiedadInteres: l.propiedad_interes,
+    mensajeInicial: l.mensaje_inicial,
+    scoreIA: l.score_ia,
+    proyectoSugeridoId: l.proyecto_sugerido_id,
+    proyectoId: l.proyecto_id,
+    clienteId: l.cliente_id,
+    creadoEn: l.creado_en,
+    actualizadoEn: l.actualizado_en,
+    proyecto: proyectos,
+  }));
 
   return (
     <div className="space-y-6">

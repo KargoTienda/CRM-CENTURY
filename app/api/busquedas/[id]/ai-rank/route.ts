@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { rankearPropiedades, actualizarContextoCliente } from "@/lib/claude";
+import { rankearPropiedades } from "@/lib/claude";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -12,29 +12,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "CLAUDE_API_KEY no configurado" }, { status: 400 });
   }
 
-  const busqueda = await prisma.busqueda.findUnique({
-    where: { id: parseInt(params.id) },
-    include: {
-      propiedades: { where: { estadoCliente: "PENDIENTE" } },
-    },
-  });
+  const id = parseInt(params.id);
 
-  if (!busqueda) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  const [{ data: busqueda, error }, { data: propiedades }] = await Promise.all([
+    supabase.from("busquedas").select("*").eq("id", id).single(),
+    supabase.from("propiedades_busqueda").select("*").eq("busqueda_id", id).eq("estado_cliente", "PENDIENTE"),
+  ]);
+
+  if (error || !busqueda) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
   const perfil = {
     zonas: JSON.parse(busqueda.zonas || "[]"),
-    tipoPropiedad: busqueda.tipoPropiedad ?? undefined,
-    ambientesMin: busqueda.ambientesMin ?? undefined,
-    ambientesMax: busqueda.ambientesMax ?? undefined,
-    precioMin: busqueda.precioMin ?? undefined,
-    precioMax: busqueda.precioMax ?? undefined,
-    modoPago: busqueda.modoPago ?? undefined,
+    tipoPropiedad: busqueda.tipo_propiedad ?? undefined,
+    ambientesMin: busqueda.ambientes_min ?? undefined,
+    ambientesMax: busqueda.ambientes_max ?? undefined,
+    precioMin: busqueda.precio_min ?? undefined,
+    precioMax: busqueda.precio_max ?? undefined,
+    modoPago: busqueda.modo_pago ?? undefined,
     cochera: busqueda.cochera ?? undefined,
-    aptoCredito: busqueda.aptoCredito ?? undefined,
-    requisitosExtra: busqueda.requisitosExtra ?? undefined,
+    aptoCredito: busqueda.apto_credito ?? undefined,
+    requisitosExtra: busqueda.requisitos_extra ?? undefined,
   };
 
-  const propiedadesRaw = busqueda.propiedades.map((p) => ({
+  const propiedadesRaw = (propiedades ?? []).map((p) => ({
     titulo: p.titulo ?? undefined,
     direccion: p.direccion ?? undefined,
     barrio: p.barrio ?? undefined,
@@ -43,25 +43,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ambientes: p.ambientes ?? undefined,
     superficie: p.superficie ?? undefined,
     cochera: p.cochera ?? undefined,
-    aptoCredito: p.aptoCredito ?? undefined,
+    aptoCredito: p.apto_credito ?? undefined,
     descripcion: p.descripcion ?? undefined,
-    linkOriginal: p.linkOriginal,
+    linkOriginal: p.link_original,
     portal: p.portal,
-    idExterno: p.idExterno ?? undefined,
+    idExterno: p.id_externo ?? undefined,
   }));
 
   if (propiedadesRaw.length === 0) {
     return NextResponse.json({ mensaje: "No hay propiedades pendientes para rankear", total: 0 });
   }
 
-  const rankings = await rankearPropiedades(perfil, busqueda.contextoPrevioIA, propiedadesRaw);
+  const rankings = await rankearPropiedades(perfil, busqueda.contexto_previo_ia, propiedadesRaw);
 
-  // Actualizar scores en la DB
   for (const r of rankings) {
-    await prisma.propiedadBusqueda.updateMany({
-      where: { busquedaId: busqueda.id, linkOriginal: r.linkOriginal },
-      data: { scoreIA: r.score, razonIA: r.razon },
-    });
+    await supabase
+      .from("propiedades_busqueda")
+      .update({ score_ia: r.score, razon_ia: r.razon })
+      .eq("busqueda_id", id)
+      .eq("link_original", r.linkOriginal);
   }
 
   return NextResponse.json({ mensaje: `${rankings.length} propiedades rankeadas`, rankings });

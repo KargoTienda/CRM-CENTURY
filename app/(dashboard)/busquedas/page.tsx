@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { Search, Plus } from "lucide-react";
@@ -6,13 +6,19 @@ import { Search, Plus } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function BusquedasPage() {
-  const busquedas = await prisma.busqueda.findMany({
-    orderBy: { creadoEn: "desc" },
-    include: {
-      cliente: { select: { id: true, nombre: true } },
-      propiedades: { select: { id: true, estadoCliente: true } },
-    },
-  });
+  const { data: busquedasRaw } = await supabase
+    .from("busquedas")
+    .select("*, clientes!cliente_id(id, nombre), propiedades_busqueda(id, estado_cliente)")
+    .order("creado_en", { ascending: false });
+
+  const busquedas = (busquedasRaw ?? []).map(({ clientes, propiedades_busqueda, ...b }) => ({
+    ...b,
+    precioMax: b.precio_max,
+    ambientesMin: b.ambientes_min,
+    creadoEn: b.creado_en,
+    cliente: clientes,
+    propiedades: propiedades_busqueda ?? [],
+  }));
 
   return (
     <div className="space-y-6">
@@ -43,8 +49,8 @@ export default async function BusquedasPage() {
         {busquedas.map((b) => {
           const zonas = JSON.parse(b.zonas || "[]") as string[];
           const total = b.propiedades.length;
-          const descartadas = b.propiedades.filter((p) => p.estadoCliente === "DESCARTADO").length;
-          const llamar = b.propiedades.filter((p) => p.estadoCliente === "LLAMAR").length;
+          const descartadas = b.propiedades.filter((p: { estado_cliente: string }) => p.estado_cliente === "DESCARTADO").length;
+          const llamar = b.propiedades.filter((p: { estado_cliente: string }) => p.estado_cliente === "LLAMAR").length;
 
           return (
             <Link
@@ -63,7 +69,7 @@ export default async function BusquedasPage() {
                 </span>
               </div>
 
-              <h3 className="font-semibold text-gray-900">{b.cliente.nombre}</h3>
+              <h3 className="font-semibold text-gray-900">{b.cliente?.nombre}</h3>
               <p className="text-sm text-gray-500 mt-1">
                 {zonas.join(", ")} {b.ambientesMin ? `· ${b.ambientesMin}+ amb` : ""}
               </p>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { clasificarLeads } from "@/lib/claude";
@@ -19,55 +19,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "leadIds requerido" }, { status: 400 });
   }
 
-  const [leadsRaw, proyectos] = await Promise.all([
-    prisma.lead.findMany({
-      where: { id: { in: leadIds } },
-      select: {
-        id: true,
-        nombre: true,
-        telefono: true,
-        propiedadInteres: true,
-        notas: true,
-        mensajeInicial: true,
-      },
-    }),
-    prisma.proyecto.findMany({
-      where: { activo: true },
-      select: { id: true, nombre: true, descripcion: true, reglasClasificacion: true },
-    }),
+  const [{ data: leadsRaw }, { data: proyectosRaw }] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id, nombre, telefono, propiedad_interes, notas, mensaje_inicial")
+      .in("id", leadIds),
+    supabase
+      .from("proyectos")
+      .select("id, nombre, descripcion, reglas_clasificacion")
+      .eq("activo", true),
   ]);
 
-  if (proyectos.length === 0) {
+  if (!proyectosRaw || proyectosRaw.length === 0) {
     return NextResponse.json({ error: "No hay proyectos activos" }, { status: 400 });
   }
 
-  const leads = leadsRaw.map((l) => ({
+  const leads = (leadsRaw ?? []).map((l) => ({
     id: l.id,
     nombre: l.nombre ?? undefined,
     telefono: l.telefono ?? undefined,
-    propiedadInteres: l.propiedadInteres ?? undefined,
+    propiedadInteres: l.propiedad_interes ?? undefined,
     notas: l.notas ?? undefined,
-    mensajeInicial: l.mensajeInicial ?? undefined,
+    mensajeInicial: l.mensaje_inicial ?? undefined,
   }));
 
-  const proyectosNorm = proyectos.map((p) => ({
+  const proyectos = proyectosRaw.map((p) => ({
     id: p.id,
     nombre: p.nombre,
     descripcion: p.descripcion ?? undefined,
-    reglasClasificacion: p.reglasClasificacion ?? undefined,
+    reglasClasificacion: p.reglas_clasificacion ?? undefined,
   }));
 
-  const resultados = await clasificarLeads(leads, proyectosNorm);
+  const resultados = await clasificarLeads(leads, proyectos);
 
-  // Aplicar clasificaciones
   for (const r of resultados) {
-    await prisma.lead.update({
-      where: { id: r.leadId },
-      data: {
-        proyectoSugeridoId: r.proyectoId,
-        scoreIA: r.confianza,
-      },
-    });
+    await supabase
+      .from("leads")
+      .update({ proyecto_sugerido_id: r.proyectoId, score_ia: r.confianza })
+      .eq("id", r.leadId);
   }
 
   return NextResponse.json({ resultados, total: resultados.length });

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { formatMoney, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
@@ -6,13 +6,18 @@ import { Building2, Plus } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function InventarioPage() {
-  const propiedades = await prisma.propiedadInventario.findMany({
-    orderBy: { creadoEn: "desc" },
-    include: {
-      cliente: { select: { nombre: true } },
-      visitas: { select: { id: true } },
-    },
-  });
+  const { data: propiedadesRaw } = await supabase
+    .from("propiedades_inventario")
+    .select("*, clientes!cliente_id(nombre), visitas_inventario(id)")
+    .order("creado_en", { ascending: false });
+
+  const propiedades = (propiedadesRaw ?? []).map(({ clientes, visitas_inventario, ...p }) => ({
+    ...p,
+    precioPublicado: p.precio_publicado,
+    creadoEn: p.creado_en,
+    cliente: clientes,
+    visitas: visitas_inventario ?? [],
+  }));
 
   const ESTADO_COLORS: Record<string, string> = {
     activa: "bg-green-100 text-green-700",
@@ -71,7 +76,7 @@ export default async function InventarioPage() {
               </div>
             </div>
             {p.cliente && (
-              <p className="text-xs text-gray-400 mt-1">Propietario: {p.cliente.nombre}</p>
+              <p className="text-xs text-gray-400 mt-1">Propietario: {(p.cliente as { nombre: string }).nombre}</p>
             )}
           </Link>
         ))}

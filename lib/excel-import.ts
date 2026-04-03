@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { prisma } from "./prisma";
+import { supabase } from "./supabase";
 
 type ImportResult = {
   imported: number;
@@ -7,17 +7,16 @@ type ImportResult = {
   errors: string[];
 };
 
-function parseDate(val: unknown): Date | null {
+function parseDate(val: unknown): string | null {
   if (!val) return null;
-  if (val instanceof Date) return val;
+  if (val instanceof Date) return val.toISOString();
   if (typeof val === "number") {
-    // Excel serial date
     const date = XLSX.SSF.parse_date_code(val);
-    if (date) return new Date(date.y, date.m - 1, date.d);
+    if (date) return new Date(date.y, date.m - 1, date.d).toISOString();
   }
   if (typeof val === "string") {
     const d = new Date(val);
-    if (!isNaN(d.getTime())) return d;
+    if (!isNaN(d.getTime())) return d.toISOString();
   }
   return null;
 }
@@ -52,34 +51,32 @@ export async function importClientes(buffer: Buffer): Promise<ImportResult> {
 
     const telefono = parseStr(row["TELEFONO"]);
 
-    // Check duplicate
-    const existing = await prisma.cliente.findFirst({
-      where: { nombre, telefono: telefono ?? undefined },
-    });
-    if (existing) { skipped++; continue; }
+    let dupQuery = supabase.from("clientes").select("id").eq("nombre", nombre);
+    if (telefono) dupQuery = dupQuery.eq("telefono", telefono);
+    const { data: existing } = await dupQuery.limit(1);
+    if (existing && existing.length > 0) { skipped++; continue; }
 
     try {
-      await prisma.cliente.create({
-        data: {
-          nombre,
-          telefono,
-          instagram: parseStr(row["INSTAGRAM"]),
-          zona: parseStr(row["ZONA"]),
-          modoPago: parseStr(row["MODO DE PAGO"]),
-          tipoBuscado: parseStr(row["TIPO DE PROPIEDAD"]),
-          valorPresupuesto: parseFloat2(row["VALOR"]),
-          ambientes: row["AMBIENTES"] ? parseInt(String(row["AMBIENTES"])) : null,
-          tarea: parseStr(row["TAREA"]),
-          notas: [
-            parseStr(row["HISTORIAL CONTACTO"]),
-            parseStr(row["SIGUIMIENTO"]),
-          ].filter(Boolean).join("\n") || null,
-          proximoContacto: parseDate(row["PROXIMO CONTACTO"]),
-          origen: parseStr(row["ORIGEN DE CONTACTO"]) || "IG",
-          estadoBusqueda: parseStr(row["BUSQUEDA"]) === "INACTIVO" ? "pausado" : "activo",
-          importadoDeExcel: true,
-        },
+      const { error } = await supabase.from("clientes").insert({
+        nombre,
+        telefono,
+        instagram: parseStr(row["INSTAGRAM"]),
+        zona: parseStr(row["ZONA"]),
+        modo_pago: parseStr(row["MODO DE PAGO"]),
+        tipo_buscado: parseStr(row["TIPO DE PROPIEDAD"]),
+        valor_presupuesto: parseFloat2(row["VALOR"]),
+        ambientes: row["AMBIENTES"] ? parseInt(String(row["AMBIENTES"])) : null,
+        tarea: parseStr(row["TAREA"]),
+        notas: [
+          parseStr(row["HISTORIAL CONTACTO"]),
+          parseStr(row["SIGUIMIENTO"]),
+        ].filter(Boolean).join("\n") || null,
+        proximo_contacto: parseDate(row["PROXIMO CONTACTO"]),
+        origen: parseStr(row["ORIGEN DE CONTACTO"]) || "IG",
+        estado_busqueda: parseStr(row["BUSQUEDA"]) === "INACTIVO" ? "pausado" : "activo",
+        importado_de_excel: true,
       });
+      if (error) throw error;
       imported++;
     } catch (e) {
       errors.push(`Error en fila ${nombre}: ${e}`);
@@ -106,17 +103,16 @@ export async function importDatosC21(buffer: Buffer): Promise<ImportResult> {
     if (!nombre) { skipped++; continue; }
 
     try {
-      await prisma.lead.create({
-        data: {
-          nombre,
-          telefono: parseStr(row["TELEFONO"]),
-          origen: "C21",
-          estado: "CONTACTADO",
-          propiedadInteres: parseStr(row["ANUNCIO"]),
-          notas: parseStr(row["INFORMACION"]),
-          mensajeInicial: parseStr(row["TAREA REALIZADA"]),
-        },
+      const { error } = await supabase.from("leads").insert({
+        nombre,
+        telefono: parseStr(row["TELEFONO"]),
+        origen: "C21",
+        estado: "CONTACTADO",
+        propiedad_interes: parseStr(row["ANUNCIO"]),
+        notas: parseStr(row["INFORMACION"]),
+        mensaje_inicial: parseStr(row["TAREA REALIZADA"]),
       });
+      if (error) throw error;
       imported++;
     } catch (e) {
       errors.push(`Error en fila ${nombre}: ${e}`);
@@ -143,36 +139,34 @@ export async function importReservas(buffer: Buffer): Promise<ImportResult> {
     const nombreCliente = parseStr(row["NOMBRE"]);
     if (!nombreCliente) { skipped++; continue; }
 
-    // Try to find existing cliente
-    const cliente = await prisma.cliente.findFirst({
-      where: { nombre: { contains: nombreCliente } },
-    });
+    const { data: clientes } = await supabase
+      .from("clientes")
+      .select("id")
+      .ilike("nombre", `%${nombreCliente}%`)
+      .limit(1);
 
-    const porcentaje = parseFloat2(row["%"]);
-    const dato = parseFloat2(row["DATO"]);
-    const mio = parseFloat2(row["MIO"]);
+    const clienteId = clientes?.[0]?.id ?? null;
 
     try {
-      await prisma.reserva.create({
-        data: {
-          nombreCliente,
-          clienteId: cliente?.id || null,
-          telefono: parseStr(row["TELEFONO"]),
-          tipoTransaccion: parseStr(row["TRANSACCION"]) || "compra",
-          zona: parseStr(row["ZONA"]),
-          valorReserva: parseFloat2(row["VALOR DE PUBLI"]),
-          precioNegociado: parseFloat2(row["PRECIO DE NEGOCIONACION FINAL"]),
-          origen: parseStr(row["ORIGEN DE CONTACTO"]),
-          fechaReserva: parseDate(row["FECHA"]) || new Date(),
-          estado: "escriturada",
-          comisionBruta: dato,
-          comisionMia: mio,
-          notas: [
-            parseStr(row["COMPRO"]) ? `COMPRÓ: ${row["COMPRO"]}` : null,
-            parseStr(row["VENDIO"]) ? `VENDIÓ: ${row["VENDIO"]}` : null,
-          ].filter(Boolean).join(" | ") || null,
-        },
+      const { error } = await supabase.from("reservas").insert({
+        nombre_cliente: nombreCliente,
+        cliente_id: clienteId,
+        telefono: parseStr(row["TELEFONO"]),
+        tipo_transaccion: parseStr(row["TRANSACCION"]) || "compra",
+        zona: parseStr(row["ZONA"]),
+        valor_reserva: parseFloat2(row["VALOR DE PUBLI"]),
+        precio_negociado: parseFloat2(row["PRECIO DE NEGOCIONACION FINAL"]),
+        origen: parseStr(row["ORIGEN DE CONTACTO"]),
+        fecha_reserva: parseDate(row["FECHA"]) || new Date().toISOString(),
+        estado: "escriturada",
+        comision_bruta: parseFloat2(row["DATO"]),
+        comision_mia: parseFloat2(row["MIO"]),
+        notas: [
+          parseStr(row["COMPRO"]) ? `COMPRÓ: ${row["COMPRO"]}` : null,
+          parseStr(row["VENDIO"]) ? `VENDIÓ: ${row["VENDIO"]}` : null,
+        ].filter(Boolean).join(" | ") || null,
       });
+      if (error) throw error;
       imported++;
     } catch (e) {
       errors.push(`Error en reserva ${nombreCliente}: ${e}`);
@@ -200,20 +194,19 @@ export async function importPreListing(buffer: Buffer): Promise<ImportResult> {
     if (!contacto) { skipped++; continue; }
 
     try {
-      await prisma.preListing.create({
-        data: {
-          contacto,
-          telefono: parseStr(row["TELEFONO"]),
-          zona: parseStr(row["ZONA"]),
-          direccion: parseStr(row["DIRECCION"]),
-          tipo: parseStr(row["TRANSACCION"]),
-          estado: parseStr(row["CAPTADO"]) === "SI" ? "captado" : "prospecto",
-          notas: [
-            parseStr(row["PRE -LISTING"]) ? `Pre-listing: ${row["PRE -LISTING"]}` : null,
-            parseStr(row["FUENTE"]) ? `Fuente: ${row["FUENTE"]}` : null,
-          ].filter(Boolean).join(" | ") || null,
-        },
+      const { error } = await supabase.from("pre_listings").insert({
+        contacto,
+        telefono: parseStr(row["TELEFONO"]),
+        zona: parseStr(row["ZONA"]),
+        direccion: parseStr(row["DIRECCION"]),
+        tipo: parseStr(row["TRANSACCION"]),
+        estado: parseStr(row["CAPTADO"]) === "SI" ? "captado" : "prospecto",
+        notas: [
+          parseStr(row["PRE -LISTING"]) ? `Pre-listing: ${row["PRE -LISTING"]}` : null,
+          parseStr(row["FUENTE"]) ? `Fuente: ${row["FUENTE"]}` : null,
+        ].filter(Boolean).join(" | ") || null,
       });
+      if (error) throw error;
       imported++;
     } catch (e) {
       errors.push(`Error pre-listing ${contacto}: ${e}`);
@@ -231,10 +224,23 @@ export async function importLeadsProyecto(buffer: Buffer, hoja: string, nombrePr
   const ws = wb.Sheets[hoja];
   if (!ws) throw new Error(`Hoja '${hoja}' no encontrada`);
 
-  // Asegurar que el proyecto existe
-  let proyecto = await prisma.proyecto.findFirst({ where: { nombre: nombreProyecto } });
-  if (!proyecto) {
-    proyecto = await prisma.proyecto.create({ data: { nombre: nombreProyecto } });
+  // Buscar o crear proyecto
+  const { data: proyectos } = await supabase
+    .from("proyectos")
+    .select("id")
+    .eq("nombre", nombreProyecto)
+    .limit(1);
+
+  let proyectoId: number;
+  if (proyectos && proyectos.length > 0) {
+    proyectoId = proyectos[0].id;
+  } else {
+    const { data: nuevo } = await supabase
+      .from("proyectos")
+      .insert({ nombre: nombreProyecto })
+      .select("id")
+      .single();
+    proyectoId = nuevo!.id;
   }
 
   const rows = XLSX.utils.sheet_to_json(ws, { defval: null }) as Record<string, unknown>[];
@@ -247,19 +253,18 @@ export async function importLeadsProyecto(buffer: Buffer, hoja: string, nombrePr
     if (!nombre) { skipped++; continue; }
 
     try {
-      await prisma.lead.create({
-        data: {
-          nombre,
-          telefono: parseStr(row["TELEFONO"]),
-          origen: "INSTAGRAM_PAUTA",
-          estado: "NUEVO",
-          proyectoId: proyecto.id,
-          notas: [
-            parseStr(row["DISPONIBILIDAD"]) ? `Disponibilidad: ${row["DISPONIBILIDAD"]}` : null,
-            parseStr(row["AGENDA"]) ? `Agenda: ${row["AGENDA"]}` : null,
-          ].filter(Boolean).join(" | ") || null,
-        },
+      const { error } = await supabase.from("leads").insert({
+        nombre,
+        telefono: parseStr(row["TELEFONO"]),
+        origen: "INSTAGRAM_PAUTA",
+        estado: "NUEVO",
+        proyecto_id: proyectoId,
+        notas: [
+          parseStr(row["DISPONIBILIDAD"]) ? `Disponibilidad: ${row["DISPONIBILIDAD"]}` : null,
+          parseStr(row["AGENDA"]) ? `Agenda: ${row["AGENDA"]}` : null,
+        ].filter(Boolean).join(" | ") || null,
       });
+      if (error) throw error;
       imported++;
     } catch (e) {
       errors.push(`Error lead ${nombre}: ${e}`);

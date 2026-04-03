@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -26,8 +26,6 @@ function buildUrl(zona: string, tipo: string, ambMin?: number, ambMax?: number, 
     : "propiedades";
 
   const zonaSlug = slugify(zona);
-
-  // ZonaProp path-based filters (most reliable)
   const parts: string[] = [];
   if (ambMin && ambMin > 1) parts.push(`${ambMin}-ambientes`);
   if (precioMin || precioMax) {
@@ -35,7 +33,6 @@ function buildUrl(zona: string, tipo: string, ambMin?: number, ambMax?: number, 
     const hasta = precioMax || 9999999;
     parts.push(`precio-desde-${desde}-hasta-${hasta}-dolares`);
   }
-
   const filterStr = parts.length > 0 ? `-${parts.join("-")}` : "";
   return `https://www.zonaprop.com.ar/${tipoSlug}-venta-${zonaSlug}${filterStr}.html`;
 }
@@ -58,11 +55,10 @@ function matchesCriteria(
   const ambientesStr = (item.list_units_rooms_quantity_range as string) || "";
   const ambientes = parseNumber(ambientesStr);
 
-  if (precioMin && precio && precio < precioMin * 0.8) return false; // 20% tolerancia
+  if (precioMin && precio && precio < precioMin * 0.8) return false;
   if (precioMax && precio && precio > precioMax * 1.2) return false;
   if (ambMin && ambientes && ambientes < ambMin) return false;
   if (ambMax && ambientes && ambientes > ambMax) return false;
-
   return true;
 }
 
@@ -74,26 +70,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "APIFY_TOKEN no configurado" }, { status: 400 });
   }
 
-  const busqueda = await prisma.busqueda.findUnique({ where: { id: parseInt(params.id) } });
-  if (!busqueda) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  const { data: busqueda, error } = await supabase
+    .from("busquedas")
+    .select("*")
+    .eq("id", parseInt(params.id))
+    .single();
+
+  if (error || !busqueda) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
   const zonas: string[] = JSON.parse(busqueda.zonas || "[]");
   if (zonas.length === 0) {
     return NextResponse.json({ error: "La búsqueda no tiene zonas configuradas" }, { status: 400 });
   }
 
-  const tipo = busqueda.tipoPropiedad || "departamento";
-
-  // Build one URL per zone (max 4)
+  const tipo = busqueda.tipo_propiedad || "departamento";
   const zonasParaBuscar = zonas.slice(0, 4);
   const startUrls = zonasParaBuscar.map((zona) => ({
     url: buildUrl(
       zona,
       tipo,
-      busqueda.ambientesMin ?? undefined,
-      busqueda.ambientesMax ?? undefined,
-      busqueda.precioMin ?? undefined,
-      busqueda.precioMax ?? undefined,
+      busqueda.ambientes_min ?? undefined,
+      busqueda.ambientes_max ?? undefined,
+      busqueda.precio_min ?? undefined,
+      busqueda.precio_max ?? undefined,
     ),
   }));
 
@@ -120,19 +119,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const allItems: Record<string, unknown>[] = await res.json();
     console.log(`[Scrape] Total items de Apify: ${allItems.length}`);
 
-    // Filter by criteria (with tolerance)
     const filtered = allItems.filter(item =>
-      matchesCriteria(
-        item,
-        busqueda.ambientesMin,
-        busqueda.ambientesMax,
-        busqueda.precioMin,
-        busqueda.precioMax
-      )
+      matchesCriteria(item, busqueda.ambientes_min, busqueda.ambientes_max, busqueda.precio_min, busqueda.precio_max)
     );
     console.log(`[Scrape] Después de filtrar: ${filtered.length}`);
 
-    // Map to our schema
     const propiedades = filtered
       .filter(item => item.list_public_url || item.propertyUrl)
       .map((item) => {
@@ -143,7 +134,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           ? locationParts[locationParts.length - 2]?.trim()
           : locationParts[0]?.trim();
 
-        // Collect photos
         const fotos: string[] = [];
         if (item.list_first_image_url) fotos.push(item.list_first_image_url as string);
         const summary = item.listSummary as Record<string, unknown> | undefined;
@@ -165,9 +155,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           cochera: !!(item.list_units_garages_quantity_range),
           descripcion: ((item.list_description || item.description) as string | undefined)?.slice(0, 600),
           fotos: JSON.stringify(fotos.slice(0, 6)),
-          linkOriginal: link,
+          link_original: link,
           portal: "zonaprop",
-          idExterno: (item.list_posting_id || item.listingId)?.toString(),
+          id_externo: (item.list_posting_id || item.listingId)?.toString(),
         };
       });
 
@@ -179,18 +169,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     }
 
-    // Avoid duplicates
-    const existentes = await prisma.propiedadBusqueda.findMany({
-      where: { busquedaId: parseInt(params.id) },
-      select: { linkOriginal: true },
-    });
-    const linksExistentes = new Set(existentes.map(e => e.linkOriginal));
-    const nuevas = propiedades.filter(p => !linksExistentes.has(p.linkOriginal));
+    const { data: existentes } = await supabase
+      .from("propiedades_busqueda")
+      .select("link_original")
+      .eq("busqueda_id", parseInt(params.id));
+
+    const linksExistentes = new Set((existentes ?? []).map(e => e.link_original));
+    const nuevas = propiedades.filter(p => !linksExistentes.has(p.link_original));
 
     if (nuevas.length > 0) {
-      await prisma.propiedadBusqueda.createMany({
-        data: nuevas.map((p, i) => ({
-          busquedaId: parseInt(params.id),
+      await supabase.from("propiedades_busqueda").insert(
+        nuevas.map((p, i) => ({
+          busqueda_id: parseInt(params.id),
           titulo: p.titulo,
           direccion: p.direccion,
           barrio: p.barrio,
@@ -200,12 +190,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           cochera: p.cochera,
           descripcion: p.descripcion,
           fotos: p.fotos,
-          linkOriginal: p.linkOriginal,
+          link_original: p.link_original,
           portal: p.portal,
-          idExterno: p.idExterno,
-          orden: existentes.length + i,
-        })),
-      });
+          id_externo: p.id_externo,
+          orden: (existentes?.length ?? 0) + i,
+        }))
+      );
     }
 
     return NextResponse.json({

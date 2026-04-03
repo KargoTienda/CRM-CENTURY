@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -11,16 +11,18 @@ export async function GET(req: NextRequest) {
   const origen = searchParams.get("origen") || "";
   const estado = searchParams.get("estado") || "";
 
-  const where: Record<string, unknown> = {};
-  if (origen) where.origen = origen;
-  if (estado) where.estado = estado;
+  let query = supabase
+    .from("leads")
+    .select("*, proyectos!proyecto_id(id, nombre)")
+    .order("creado_en", { ascending: false });
 
-  const leads = await prisma.lead.findMany({
-    where,
-    orderBy: { creadoEn: "desc" },
-    include: { proyecto: { select: { id: true, nombre: true } } },
-  });
+  if (origen) query = query.eq("origen", origen);
+  if (estado) query = query.eq("estado", estado);
 
+  const { data: leadsRaw, error } = await query;
+  if (error) throw error;
+
+  const leads = leadsRaw?.map(({ proyectos, ...l }) => ({ ...l, proyecto: proyectos })) ?? [];
   return NextResponse.json(leads);
 }
 
@@ -30,19 +32,22 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  const lead = await prisma.lead.create({
-    data: {
+  const { data: lead, error } = await supabase
+    .from("leads")
+    .insert({
       nombre: body.nombre || null,
       telefono: body.telefono || null,
       instagram: body.instagram || null,
       email: body.email || null,
       origen: body.origen || "MANUAL",
       estado: body.estado || "NUEVO",
-      propiedadInteres: body.propiedadInteres || null,
+      propiedad_interes: body.propiedadInteres || null,
       notas: body.notas || null,
-      proyectoId: body.proyectoId ? parseInt(body.proyectoId) : null,
-    },
-  });
+      proyecto_id: body.proyectoId ? parseInt(body.proyectoId) : null,
+    })
+    .select()
+    .single();
 
+  if (error) throw error;
   return NextResponse.json(lead, { status: 201 });
 }

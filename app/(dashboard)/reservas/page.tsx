@@ -1,13 +1,30 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import ReservasClient from "@/components/reservas/ReservasClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReservasPage() {
-  const reservas = await prisma.reserva.findMany({
-    orderBy: { fechaReserva: "desc" },
-    include: { cliente: { select: { id: true, nombre: true } } },
-  });
+  const { data: reservasRaw } = await supabase
+    .from("reservas")
+    .select("*, clientes!cliente_id(id, nombre)")
+    .order("fecha_reserva", { ascending: false });
+
+  const reservas = (reservasRaw ?? []).map(({ clientes, ...r }) => ({
+    ...r,
+    nombreCliente: r.nombre_cliente,
+    tipoTransaccion: r.tipo_transaccion,
+    valorReserva: r.valor_reserva,
+    precioNegociado: r.precio_negociado,
+    porcentajeParteCompradora: r.porcentaje_parte_compradora,
+    porcentajeParteVendedora: r.porcentaje_parte_vendedora,
+    comisionBruta: r.comision_bruta,
+    comisionMia: r.comision_mia,
+    fechaReserva: r.fecha_reserva,
+    fechaEscritura: r.fecha_escritura,
+    creadoEn: r.creado_en,
+    actualizadoEn: r.actualizado_en,
+    cliente: clientes,
+  }));
 
   return (
     <div className="space-y-6">

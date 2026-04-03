@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function GET() {
-  const proyectos = await prisma.proyecto.findMany({ where: { activo: true }, orderBy: { creadoEn: "asc" } });
+  const { data: proyectos, error } = await supabase
+    .from("proyectos")
+    .select("*")
+    .eq("activo", true)
+    .order("creado_en", { ascending: true });
+
+  if (error) throw error;
   return NextResponse.json(proyectos);
 }
 
@@ -13,8 +19,13 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await req.json();
-  const proyecto = await prisma.proyecto.create({
-    data: { nombre: body.nombre, descripcion: body.descripcion || null },
-  });
+
+  const { data: proyecto, error } = await supabase
+    .from("proyectos")
+    .insert({ nombre: body.nombre, descripcion: body.descripcion || null })
+    .select()
+    .single();
+
+  if (error) throw error;
   return NextResponse.json(proyecto, { status: 201 });
 }

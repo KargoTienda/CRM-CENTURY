@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -7,20 +7,27 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const propiedad = await prisma.propiedadInventario.findUnique({
-    where: { id: parseInt(params.id) },
-    include: {
-      cliente: { select: { id: true, nombre: true, telefono: true } },
-      visitas: {
-        orderBy: { fecha: "desc" },
-        include: { cliente: { select: { nombre: true } } },
-      },
-      reservas: { select: { id: true, estado: true, fechaReserva: true, nombreCliente: true } },
-    },
-  });
+  const id = parseInt(params.id);
 
-  if (!propiedad) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  return NextResponse.json(propiedad);
+  const [{ data: propiedad, error }, { data: visitas }, { data: reservas }] = await Promise.all([
+    supabase.from("propiedades_inventario").select("*, clientes!cliente_id(id, nombre, telefono)").eq("id", id).single(),
+    supabase
+      .from("visitas_inventario")
+      .select("*, clientes!cliente_id(nombre)")
+      .eq("propiedad_id", id)
+      .order("fecha", { ascending: false }),
+    supabase
+      .from("reservas")
+      .select("id, estado, fecha_reserva, nombre_cliente")
+      .eq("propiedad_id", id),
+  ]);
+
+  if (error || !propiedad) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+  const { clientes, ...p } = propiedad as typeof propiedad & { clientes: unknown };
+  const visitasMapped = (visitas ?? []).map(({ clientes: c, ...v }) => ({ ...v, cliente: c }));
+
+  return NextResponse.json({ ...p, cliente: clientes, visitas: visitasMapped, reservas: reservas ?? [] });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -29,29 +36,33 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const body = await req.json();
 
-  const propiedad = await prisma.propiedadInventario.update({
-    where: { id: parseInt(params.id) },
-    data: {
-      titulo: body.titulo ?? undefined,
-      direccion: body.direccion ?? undefined,
-      barrio: body.barrio ?? undefined,
-      zona: body.zona ?? undefined,
-      tipo: body.tipo ?? undefined,
-      ambientes: body.ambientes != null ? parseInt(body.ambientes) : undefined,
-      superficie: body.superficie != null ? parseFloat(body.superficie) : undefined,
-      cochera: body.cochera ?? undefined,
-      precioPublicado: body.precioPublicado != null ? parseFloat(body.precioPublicado) : undefined,
-      precioNegociado: body.precioNegociado != null ? parseFloat(body.precioNegociado) : undefined,
-      moneda: body.moneda ?? undefined,
-      tipoTransaccion: body.tipoTransaccion ?? undefined,
-      estado: body.estado ?? undefined,
-      clienteId: body.clienteId != null ? parseInt(body.clienteId) : undefined,
-      linkPortal: body.linkPortal ?? undefined,
-      porcentajeComision: body.porcentajeComision != null ? parseFloat(body.porcentajeComision) : undefined,
-      origen: body.origen ?? undefined,
-    },
-  });
+  const updates: Record<string, unknown> = {};
+  if (body.titulo !== undefined) updates.titulo = body.titulo;
+  if (body.direccion !== undefined) updates.direccion = body.direccion;
+  if (body.barrio !== undefined) updates.barrio = body.barrio;
+  if (body.zona !== undefined) updates.zona = body.zona;
+  if (body.tipo !== undefined) updates.tipo = body.tipo;
+  if (body.ambientes != null) updates.ambientes = parseInt(body.ambientes);
+  if (body.superficie != null) updates.superficie = parseFloat(body.superficie);
+  if (body.cochera !== undefined) updates.cochera = body.cochera;
+  if (body.precioPublicado != null) updates.precio_publicado = parseFloat(body.precioPublicado);
+  if (body.precioNegociado != null) updates.precio_negociado = parseFloat(body.precioNegociado);
+  if (body.moneda !== undefined) updates.moneda = body.moneda;
+  if (body.tipoTransaccion !== undefined) updates.tipo_transaccion = body.tipoTransaccion;
+  if (body.estado !== undefined) updates.estado = body.estado;
+  if (body.clienteId != null) updates.cliente_id = parseInt(body.clienteId);
+  if (body.linkPortal !== undefined) updates.link_portal = body.linkPortal;
+  if (body.porcentajeComision != null) updates.porcentaje_comision = parseFloat(body.porcentajeComision);
+  if (body.origen !== undefined) updates.origen = body.origen;
 
+  const { data: propiedad, error } = await supabase
+    .from("propiedades_inventario")
+    .update(updates)
+    .eq("id", parseInt(params.id))
+    .select()
+    .single();
+
+  if (error) throw error;
   return NextResponse.json(propiedad);
 }
 
@@ -59,6 +70,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  await prisma.propiedadInventario.delete({ where: { id: parseInt(params.id) } });
+  const { error } = await supabase.from("propiedades_inventario").delete().eq("id", parseInt(params.id));
+  if (error) throw error;
   return NextResponse.json({ ok: true });
 }

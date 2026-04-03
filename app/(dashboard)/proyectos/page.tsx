@@ -1,25 +1,45 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import ProyectosClient from "@/components/leads/ProyectosClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProyectosPage() {
-  const proyectos = await prisma.proyecto.findMany({
-    where: { activo: true },
-    include: {
-      leadsAsignados: {
-        orderBy: { creadoEn: "desc" },
-        include: { proyecto: { select: { id: true, nombre: true } } },
-      },
-    },
-    orderBy: { creadoEn: "asc" },
-  });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapLead(l: any) {
+  return {
+    id: l.id,
+    nombre: l.nombre,
+    telefono: l.telefono,
+    notas: l.notas,
+    estado: l.estado,
+    creadoEn: l.creado_en,
+    proyecto: l.proyectos ?? null,
+  };
+}
 
-  const sinAsignar = await prisma.lead.findMany({
-    where: { proyectoId: null, origen: { not: "INSTAGRAM_PAUTA" } },
-    orderBy: { creadoEn: "desc" },
-    include: { proyecto: { select: { id: true, nombre: true } } },
-  });
+export default async function ProyectosPage() {
+  const [{ data: proyectosRaw }, { data: sinAsignarRaw }] = await Promise.all([
+    supabase
+      .from("proyectos")
+      .select("*, leads!proyecto_id(*, proyectos!proyecto_id(id, nombre))")
+      .eq("activo", true)
+      .order("creado_en", { ascending: true }),
+    supabase
+      .from("leads")
+      .select("*, proyectos!proyecto_id(id, nombre)")
+      .is("proyecto_id", null)
+      .neq("origen", "INSTAGRAM_PAUTA")
+      .order("creado_en", { ascending: false }),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const proyectos = (proyectosRaw ?? []).map((p: any) => ({
+    id: p.id,
+    nombre: p.nombre,
+    descripcion: p.descripcion,
+    leadsAsignados: (p.leads ?? []).map(mapLead),
+  }));
+
+  const sinAsignar = (sinAsignarRaw ?? []).map(mapLead);
 
   return (
     <div className="space-y-6">
