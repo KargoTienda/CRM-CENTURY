@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS clientes (
 );
 CREATE INDEX IF NOT EXISTS idx_clientes_estado ON clientes(estado_busqueda);
 CREATE INDEX IF NOT EXISTS idx_clientes_proximo_contacto ON clientes(proximo_contacto);
-CREATE TRIGGER trg_clientes_updated_at
+CREATE OR REPLACE TRIGGER trg_clientes_updated_at
   BEFORE UPDATE ON clientes
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
 
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS leads (
 );
 CREATE INDEX IF NOT EXISTS idx_leads_estado ON leads(estado);
 CREATE INDEX IF NOT EXISTS idx_leads_origen ON leads(origen);
-CREATE TRIGGER trg_leads_updated_at
+CREATE OR REPLACE TRIGGER trg_leads_updated_at
   BEFORE UPDATE ON leads
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
 
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS busquedas (
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_busquedas_cliente ON busquedas(cliente_id);
-CREATE TRIGGER trg_busquedas_updated_at
+CREATE OR REPLACE TRIGGER trg_busquedas_updated_at
   BEFORE UPDATE ON busquedas
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
 
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS propiedades_busqueda (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE TRIGGER trg_propiedades_busqueda_updated_at
+CREATE OR REPLACE TRIGGER trg_propiedades_busqueda_updated_at
   BEFORE UPDATE ON propiedades_busqueda
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
 
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS propiedades_inventario (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE TRIGGER trg_propiedades_inventario_updated_at
+CREATE OR REPLACE TRIGGER trg_propiedades_inventario_updated_at
   BEFORE UPDATE ON propiedades_inventario
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
 
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS reservas (
 );
 CREATE INDEX IF NOT EXISTS idx_reservas_estado ON reservas(estado);
 CREATE INDEX IF NOT EXISTS idx_reservas_fecha ON reservas(fecha_reserva);
-CREATE TRIGGER trg_reservas_updated_at
+CREATE OR REPLACE TRIGGER trg_reservas_updated_at
   BEFORE UPDATE ON reservas
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
 
@@ -231,6 +231,6 @@ CREATE TABLE IF NOT EXISTS pre_listings (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE TRIGGER trg_pre_listings_updated_at
+CREATE OR REPLACE TRIGGER trg_pre_listings_updated_at
   BEFORE UPDATE ON pre_listings
   FOR EACH ROW EXECUTE FUNCTION update_actualizado_en();
