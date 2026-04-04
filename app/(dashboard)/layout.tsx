@@ -8,7 +8,10 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen" style={{ background: "var(--bg-base)" }}>
       <Sidebar />
-      <main className="flex-1 ml-60 p-8 min-h-screen" style={{ background: "var(--bg-base)" }}>
+      <main
+        className="flex-1 ml-60 p-8 min-h-screen"
+        style={{ background: "var(--bg-base)" }}
+      >
         {children}
       </main>
     </div>

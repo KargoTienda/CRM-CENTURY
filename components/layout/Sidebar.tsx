@@ -15,6 +15,7 @@ import {
   FileText,
   Upload,
   LogOut,
+  Waves,
 } from "lucide-react";
 
 const navItems = [
@@ -32,31 +33,53 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-60 flex flex-col z-50"
-      style={{
-        background: "linear-gradient(180deg, #0A0B12 0%, #07080D 100%)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-      }}
+    <aside
+      className="fixed inset-y-0 left-0 w-60 flex flex-col z-50"
+      style={{ background: "linear-gradient(180deg, #023E8A 0%, #0077B6 70%, #0096C7 100%)" }}
     >
+      {/* Decorative wave overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-10"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse 120% 80% at 50% 110%, #48CAE4 0%, transparent 60%)",
+        }}
+      />
+
       {/* Logo */}
-      <div className="px-5 py-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <div
+        className="relative px-5 py-6"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E8C97A)", boxShadow: "0 4px 14px rgba(201,168,76,0.3)" }}
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{
+              background: "rgba(255,255,255,0.2)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.3)",
+            }}
           >
-            <Building2 className="w-4 h-4" style={{ color: "#07080D" }} />
+            <Waves className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-semibold text-sm" style={{ color: "#EDEAE3", letterSpacing: "0.02em" }}>CRM</p>
-            <p className="text-xs" style={{ color: "#47455A" }}>Inmobiliario</p>
+            <p className="font-bold text-sm text-white" style={{ letterSpacing: "0.02em" }}>
+              CRM
+            </p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+              Inmobiliario
+            </p>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <p className="px-3 mb-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#47455A" }}>
-          Navegación
+      <nav className="relative flex-1 overflow-y-auto py-4 px-3">
+        <p
+          className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
+          Menú
         </p>
         <ul className="space-y-0.5">
           {navItems.map((item) => {
@@ -68,19 +91,9 @@ export default function Sidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
-                    active
-                      ? "font-medium"
-                      : "hover:bg-white/[0.04]"
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150",
+                    active ? "nav-active font-semibold" : "nav-inactive"
                   )}
-                  style={active ? {
-                    background: "rgba(201,168,76,0.12)",
-                    color: "#C9A84C",
-                    borderLeft: "2px solid #C9A84C",
-                  } : {
-                    color: "#8A8799",
-                    borderLeft: "2px solid transparent",
-                  }}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   {item.label}
@@ -90,26 +103,22 @@ export default function Sidebar() {
           })}
         </ul>
 
-        <div className="mt-6 pt-5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <p className="px-3 mb-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#47455A" }}>
+        <div
+          className="mt-5 pt-4"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          <p
+            className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.35)" }}
+          >
             Admin
           </p>
           <Link
             href="/admin/import"
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
-              pathname.startsWith("/admin")
-                ? "font-medium"
-                : "hover:bg-white/[0.04]"
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150",
+              pathname.startsWith("/admin") ? "nav-active font-semibold" : "nav-inactive"
             )}
-            style={pathname.startsWith("/admin") ? {
-              background: "rgba(201,168,76,0.12)",
-              color: "#C9A84C",
-              borderLeft: "2px solid #C9A84C",
-            } : {
-              color: "#8A8799",
-              borderLeft: "2px solid transparent",
-            }}
           >
             <Upload className="w-4 h-4" />
             Importar Excel
@@ -118,11 +127,13 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+      <div
+        className="relative px-3 py-4"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+      >
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 w-full hover:bg-white/[0.04]"
-          style={{ color: "#47455A" }}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm w-full transition-all nav-inactive"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesión

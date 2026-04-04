@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { Building2 } from "lucide-react";
+import { Waves } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,13 +14,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
+    const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
       setError("Email o contraseña incorrectos");
       setLoading(false);
@@ -31,87 +25,86 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
+      className="min-h-screen flex"
       style={{
-        background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.08) 0%, var(--bg-base) 60%)",
-        backgroundColor: "var(--bg-base)",
+        background: "linear-gradient(135deg, #023E8A 0%, #0077B6 40%, #0096C7 70%, #00B4D8 100%)",
       }}
     >
-      {/* Subtle grid overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
+      {/* Left: decorative ocean panel */}
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-12 relative overflow-hidden">
+        {/* Wave circles */}
+        {[200, 340, 480, 620].map((size, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full border"
+            style={{
+              width: size,
+              height: size,
+              borderColor: "rgba(255,255,255,0.08)",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        ))}
+        <Waves className="w-16 h-16 text-white/30 mb-6 relative z-10" />
+        <h2 className="text-4xl font-bold text-white relative z-10 text-center leading-tight">
+          Tu negocio<br />inmobiliario<br />en un solo lugar.
+        </h2>
+        <p className="mt-4 text-white/60 text-center text-sm relative z-10 max-w-xs">
+          Gestioná clientes, leads, reservas e inventario con claridad y eficiencia.
+        </p>
+      </div>
 
-      <div className="relative w-full max-w-sm px-4">
-        {/* Card */}
-        <div
-          className="rounded-2xl p-8"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset",
-          }}
-        >
+      {/* Right: login card */}
+      <div
+        className="w-full lg:w-[420px] flex items-center justify-center p-8"
+        style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)" }}
+      >
+        <div className="w-full max-w-sm">
           {/* Logo */}
-          <div className="text-center mb-8">
+          <div className="mb-10">
             <div
-              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5"
-              style={{
-                background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
-                boxShadow: "0 8px 24px rgba(201,168,76,0.35)",
-              }}
+              className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-5"
+              style={{ background: "linear-gradient(135deg, #0077B6, #00B4D8)" }}
             >
-              <Building2 className="w-6 h-6" style={{ color: "#07080D" }} />
+              <Waves className="w-5 h-5 text-white" />
             </div>
             <h1
-              className="text-xl font-semibold"
-              style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}
+              className="text-2xl font-bold"
+              style={{ color: "#023E8A", letterSpacing: "-0.03em" }}
             >
-              CRM Inmobiliario
+              Bienvenido
             </h1>
-            <p className="text-sm mt-1" style={{ color: "#47455A" }}>
-              Ingresá a tu cuenta
+            <p className="text-sm mt-1" style={{ color: "#90AFCC" }}>
+              Ingresá a CRM Inmobiliario
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#8A8799" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#0077B6" }}>
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg text-sm transition-all"
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "var(--text-primary)",
-                }}
+                className="input-field"
                 placeholder="agente@century21.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#8A8799" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#0077B6" }}>
                 Contraseña
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg text-sm transition-all"
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "var(--text-primary)",
-                }}
+                className="input-field"
                 placeholder="••••••••"
                 required
               />
@@ -119,8 +112,12 @@ export default function LoginPage() {
 
             {error && (
               <div
-                className="px-4 py-2.5 rounded-lg text-xs"
-                style={{ background: "rgba(248,113,113,0.1)", color: "#F87171", border: "1px solid rgba(248,113,113,0.2)" }}
+                className="px-4 py-2.5 rounded-xl text-xs font-medium"
+                style={{
+                  background: "rgba(239,68,68,0.08)",
+                  color: "#DC2626",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                }}
               >
                 {error}
               </div>
@@ -129,16 +126,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all mt-2"
-              style={{
-                background: loading
-                  ? "rgba(201,168,76,0.5)"
-                  : "linear-gradient(135deg, #C9A84C, #E8C97A)",
-                color: "#07080D",
-                boxShadow: loading ? "none" : "0 4px 16px rgba(201,168,76,0.25)",
-              }}
+              className="btn-primary w-full justify-center mt-2"
+              style={{ padding: "12px 18px", fontSize: "14px" }}
             >
-              {loading ? "Ingresando..." : "Ingresar"}
+              {loading ? "Ingresando..." : "Ingresar →"}
             </button>
           </form>
         </div>
