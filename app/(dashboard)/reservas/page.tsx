@@ -30,8 +30,8 @@ export default async function ReservasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reservas</h1>
-          <p className="text-gray-500 mt-1">{reservas.length} reservas registradas</p>
+          <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>Reservas</h1>
+          <p className="text-sm mt-1" style={{ color: "#8A8799" }}>{reservas.length} reservas registradas</p>
         </div>
       </div>
       <ReservasClient reservas={reservas} />

@@ -26,8 +26,8 @@ export default async function LeadsPortalesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Leads Portales / Manual</h1>
-        <p className="text-gray-500 mt-1">Leads de C21, ZonaProp, ArgenProp y entrada manual</p>
+        <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>Leads Portales / Manual</h1>
+        <p className="text-sm mt-1" style={{ color: "#8A8799" }}>Leads de C21, ZonaProp, ArgenProp y entrada manual</p>
       </div>
       <LeadsClient leads={leads} origen="MANUAL" />
     </div>

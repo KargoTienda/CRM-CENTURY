@@ -46,8 +46,8 @@ export default async function ClientesPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-gray-500 mt-1">{total} registros totales</p>
+          <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>Clientes</h1>
+          <p className="text-sm mt-1" style={{ color: "#8A8799" }}>{total} registros totales</p>
         </div>
       </div>
       <ClientesTable

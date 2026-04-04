@@ -44,8 +44,8 @@ export default async function ProyectosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Proyectos</h1>
-        <p className="text-gray-500 mt-1">Leads potenciales por proyecto</p>
+        <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>Proyectos</h1>
+        <p className="text-sm mt-1" style={{ color: "#8A8799" }}>Leads potenciales por proyecto</p>
       </div>
       <ProyectosClient proyectos={proyectos} sinAsignar={sinAsignar} />
     </div>

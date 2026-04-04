@@ -2,10 +2,9 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Building2 } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,59 +30,113 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo / Header */}
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{
+        background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.08) 0%, var(--bg-base) 60%)",
+        backgroundColor: "var(--bg-base)",
+      }}
+    >
+      {/* Subtle grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+
+      <div className="relative w-full max-w-sm px-4">
+        {/* Card */}
+        <div
+          className="rounded-2xl p-8"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset",
+          }}
+        >
+          {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600 mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
+            <div
+              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5"
+              style={{
+                background: "linear-gradient(135deg, #C9A84C, #E8C97A)",
+                boxShadow: "0 8px 24px rgba(201,168,76,0.35)",
+              }}
+            >
+              <Building2 className="w-6 h-6" style={{ color: "#07080D" }} />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">CRM Inmobiliario</h1>
-            <p className="text-gray-500 mt-1 text-sm">Ingresá a tu cuenta</p>
+            <h1
+              className="text-xl font-semibold"
+              style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}
+            >
+              CRM Inmobiliario
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "#47455A" }}>
+              Ingresá a tu cuenta
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "#8A8799" }}>
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                className="w-full px-4 py-2.5 rounded-lg text-sm transition-all"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "var(--text-primary)",
+                }}
                 placeholder="agente@century21.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "#8A8799" }}>
                 Contraseña
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                className="w-full px-4 py-2.5 rounded-lg text-sm transition-all"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "var(--text-primary)",
+                }}
                 placeholder="••••••••"
                 required
               />
             </div>
 
             {error && (
-              <p className="text-red-600 text-sm bg-red-50 px-4 py-2 rounded-lg">
+              <div
+                className="px-4 py-2.5 rounded-lg text-xs"
+                style={{ background: "rgba(248,113,113,0.1)", color: "#F87171", border: "1px solid rgba(248,113,113,0.2)" }}
+              >
                 {error}
-              </p>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition"
+              className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all mt-2"
+              style={{
+                background: loading
+                  ? "rgba(201,168,76,0.5)"
+                  : "linear-gradient(135deg, #C9A84C, #E8C97A)",
+                color: "#07080D",
+                boxShadow: loading ? "none" : "0 4px 16px rgba(201,168,76,0.25)",
+              }}
             >
               {loading ? "Ingresando..." : "Ingresar"}
             </button>

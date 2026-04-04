@@ -61,87 +61,174 @@ async function getKPIs() {
   };
 }
 
+const ESTADO_BADGE: Record<string, { bg: string; color: string }> = {
+  escriturada: { bg: "rgba(52,211,153,0.12)", color: "#34D399" },
+  en_escritura: { bg: "rgba(96,165,250,0.12)", color: "#60A5FA" },
+  reservada: { bg: "rgba(251,191,36,0.12)", color: "#FBBF24" },
+};
+
 export default async function DashboardPage() {
   const data = await getKPIs();
 
   const kpis = [
-    { label: "Clientes activos", value: data.totalClientes, icon: Users, color: "bg-blue-500" },
-    { label: "Reservas activas", value: data.reservasActivas, icon: FileText, color: "bg-amber-500" },
-    { label: "Comisiones proyectadas", value: formatMoney(data.comisionesProyectadas), icon: TrendingUp, color: "bg-green-500" },
-    { label: "Contactos próx. 7 días", value: data.proximosContactos.length, icon: Calendar, color: "bg-purple-500" },
+    {
+      label: "Clientes activos",
+      value: data.totalClientes,
+      icon: Users,
+      accent: "#60A5FA",
+      accentBg: "rgba(96,165,250,0.1)",
+    },
+    {
+      label: "Reservas activas",
+      value: data.reservasActivas,
+      icon: FileText,
+      accent: "#FBBF24",
+      accentBg: "rgba(251,191,36,0.1)",
+    },
+    {
+      label: "Comisiones proyectadas",
+      value: formatMoney(data.comisionesProyectadas),
+      icon: TrendingUp,
+      accent: "#C9A84C",
+      accentBg: "rgba(201,168,76,0.1)",
+      gold: true,
+    },
+    {
+      label: "Contactos próx. 7 días",
+      value: data.proximosContactos.length,
+      icon: Calendar,
+      accent: "#A78BFA",
+      accentBg: "rgba(167,139,250,0.1)",
+    },
   ];
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Resumen de tu negocio inmobiliario</p>
+        <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>
+          Dashboard
+        </h1>
+        <p className="text-sm mt-1" style={{ color: "#8A8799" }}>
+          Resumen de tu negocio inmobiliario
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div key={kpi.label} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">{kpi.label}</span>
-                <div className={`w-9 h-9 rounded-lg ${kpi.color} flex items-center justify-center`}>
-                  <Icon className="w-4 h-4 text-white" />
+            <div
+              key={kpi.label}
+              className="rounded-xl p-5 transition-all duration-200 hover:translate-y-[-1px]"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-medium" style={{ color: "#8A8799" }}>{kpi.label}</p>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: kpi.accentBg }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: kpi.accent }} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{kpi.value}</p>
+              <p
+                className="text-2xl font-bold tracking-tight"
+                style={{ color: kpi.gold ? "#C9A84C" : "#EDEAE3" }}
+              >
+                {kpi.value}
+              </p>
             </div>
           );
         })}
       </div>
 
+      {/* Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Reservas activas</h2>
+        {/* Reservas activas */}
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <div className="px-5 py-4 flex items-center justify-between"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <h2 className="font-semibold text-sm" style={{ color: "#EDEAE3" }}>Reservas activas</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(251,191,36,0.12)", color: "#FBBF24" }}
+            >
+              {data.reservasRecientes.length}
+            </span>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div>
             {data.reservasRecientes.length === 0 && (
-              <p className="px-5 py-8 text-gray-400 text-center text-sm">Sin reservas activas</p>
+              <p className="px-5 py-10 text-center text-sm" style={{ color: "#47455A" }}>
+                Sin reservas activas
+              </p>
             )}
-            {data.reservasRecientes.map((r) => (
-              <div key={r.id} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm text-gray-900">{r.nombreCliente}</p>
-                  <p className="text-xs text-gray-500">
-                    {r.tipoTransaccion} · {r.zona} · {formatDate(r.fechaReserva)}
-                  </p>
+            {data.reservasRecientes.map((r, i) => {
+              const badge = ESTADO_BADGE[r.estado] ?? { bg: "rgba(255,255,255,0.08)", color: "#8A8799" };
+              return (
+                <div
+                  key={r.id}
+                  className="px-5 py-3.5 flex items-center justify-between transition-colors hover:bg-white/[0.02]"
+                  style={i > 0 ? { borderTop: "1px solid rgba(255,255,255,0.04)" } : {}}
+                >
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "#EDEAE3" }}>{r.nombreCliente}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "#8A8799" }}>
+                      {r.tipoTransaccion} · {r.zona} · {formatDate(r.fechaReserva)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold" style={{ color: "#C9A84C" }}>{formatMoney(r.comisionMia)}</p>
+                    <span className="badge mt-1" style={{ background: badge.bg, color: badge.color }}>
+                      {r.estado.replace("_", " ")}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-green-700">{formatMoney(r.comisionMia)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    r.estado === "escriturada" ? "bg-green-100 text-green-700"
-                    : r.estado === "en_escritura" ? "bg-blue-100 text-blue-700"
-                    : "bg-amber-100 text-amber-700"
-                  }`}>
-                    {r.estado.replace("_", " ")}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Próximos contactos (7 días)</h2>
+        {/* Próximos contactos */}
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <div className="px-5 py-4 flex items-center justify-between"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <h2 className="font-semibold text-sm" style={{ color: "#EDEAE3" }}>Próximos contactos</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(167,139,250,0.12)", color: "#A78BFA" }}
+            >
+              7 días
+            </span>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div>
             {data.proximosContactos.length === 0 && (
-              <p className="px-5 py-8 text-gray-400 text-center text-sm">Sin contactos programados</p>
+              <p className="px-5 py-10 text-center text-sm" style={{ color: "#47455A" }}>
+                Sin contactos programados
+              </p>
             )}
-            {data.proximosContactos.map((c) => (
-              <div key={c.id} className="px-5 py-3 flex items-center justify-between">
+            {data.proximosContactos.map((c, i) => (
+              <div
+                key={c.id}
+                className="px-5 py-3.5 flex items-center justify-between transition-colors hover:bg-white/[0.02]"
+                style={i > 0 ? { borderTop: "1px solid rgba(255,255,255,0.04)" } : {}}
+              >
                 <div>
-                  <p className="font-medium text-sm text-gray-900">{c.nombre}</p>
-                  <p className="text-xs text-gray-500">{c.tarea}</p>
+                  <p className="text-sm font-medium" style={{ color: "#EDEAE3" }}>{c.nombre}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#8A8799" }}>{c.tarea}</p>
                 </div>
-                <span className="text-xs text-gray-400">{formatDate(c.proximoContacto)}</span>
+                <span className="text-xs" style={{ color: "#47455A" }}>{formatDate(c.proximoContacto)}</span>
               </div>
             ))}
           </div>
