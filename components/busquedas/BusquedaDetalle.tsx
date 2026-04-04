@@ -71,7 +71,7 @@ export default function BusquedaDetalle({ busqueda }: { busqueda: Busqueda }) {
   const [showEdit, setShowEdit] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
 
-  const zonas = JSON.parse(busqueda.zonas || "[]") as string[];
+  const zonas = (Array.isArray(busqueda.zonas) ? busqueda.zonas : JSON.parse(busqueda.zonas || "[]")) as string[];
 
   const [editForm, setEditForm] = useState({
     zonas: zonas,
@@ -190,7 +190,7 @@ export default function BusquedaDetalle({ busqueda }: { busqueda: Busqueda }) {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Búsqueda — {busqueda.cliente.nombre}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Búsqueda — {busqueda.cliente?.nombre ?? "Sin cliente"}</h1>
           <div className="flex flex-wrap gap-2 mt-1 text-sm text-gray-500">
             <span>{zonas.join(", ")}</span>
             {busqueda.tipoPropiedad && <span>· {busqueda.tipoPropiedad}</span>}

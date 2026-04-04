@@ -73,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (error || !busqueda) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
-  const zonas: string[] = JSON.parse(busqueda.zonas || "[]");
+  const zonas: string[] = Array.isArray(busqueda.zonas) ? busqueda.zonas : JSON.parse(busqueda.zonas || "[]");
   if (zonas.length === 0) {
     return NextResponse.json({ error: "La búsqueda no tiene zonas configuradas" }, { status: 400 });
   }

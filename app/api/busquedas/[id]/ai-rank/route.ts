@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (error || !busqueda) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
   const perfil = {
-    zonas: JSON.parse(busqueda.zonas || "[]"),
+    zonas: Array.isArray(busqueda.zonas) ? busqueda.zonas : JSON.parse(busqueda.zonas || "[]"),
     tipoPropiedad: busqueda.tipo_propiedad ?? undefined,
     ambientesMin: busqueda.ambientes_min ?? undefined,
     ambientesMax: busqueda.ambientes_max ?? undefined,

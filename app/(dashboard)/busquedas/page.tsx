@@ -48,7 +48,7 @@ export default async function BusquedasPage() {
           </div>
         )}
         {busquedas.map((b) => {
-          const zonas = JSON.parse(b.zonas || "[]") as string[];
+          const zonas = (Array.isArray(b.zonas) ? b.zonas : JSON.parse(b.zonas || "[]")) as string[];
           const total = b.propiedades.length;
           const llamar = b.propiedades.filter((p: { estado_cliente: string }) => p.estado_cliente === "LLAMAR").length;
           const descartadas = b.propiedades.filter((p: { estado_cliente: string }) => p.estado_cliente === "DESCARTADO").length;
