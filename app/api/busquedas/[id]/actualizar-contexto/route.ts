@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { actualizarContextoCliente } from "@/lib/claude";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const id = parseInt(params.id);
 
   const [{ data: busqueda, error }, { data: propiedades }] = await Promise.all([

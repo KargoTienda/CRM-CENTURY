@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const id = parseInt(params.id);
 
   const [{ data: propiedad, error }, { data: visitas }, { data: reservas }] = await Promise.all([
@@ -31,9 +26,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const body = await req.json();
 
   const updates: Record<string, unknown> = {};
@@ -67,9 +59,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const { error } = await supabase.from("propiedades_inventario").delete().eq("id", parseInt(params.id));
   if (error) throw error;
   return NextResponse.json({ ok: true });

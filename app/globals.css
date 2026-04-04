@@ -54,19 +54,6 @@
   ::-webkit-scrollbar-thumb { background: #ADE8F4; border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: #48CAE4; }
 
-  input, select, textarea {
-    background-color: var(--bg-card) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
-  }
-  input::placeholder, textarea::placeholder {
-    color: var(--text-muted) !important;
-  }
-  input:focus, select:focus, textarea:focus {
-    outline: none !important;
-    border-color: var(--border-focus) !important;
-    box-shadow: 0 0 0 3px rgba(0,180,216,0.12) !important;
-  }
   select option {
     background: var(--bg-card);
     color: var(--text-primary);

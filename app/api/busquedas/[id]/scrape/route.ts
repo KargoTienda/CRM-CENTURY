@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 const ZONAPROP_ACTOR = "PyCipBrbNO7KBfnQe";
@@ -63,9 +61,6 @@ function matchesCriteria(
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   if (!APIFY_TOKEN) {
     return NextResponse.json({ error: "APIFY_TOKEN no configurado" }, { status: 400 });
   }

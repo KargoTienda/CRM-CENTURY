@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, UserPlus } from "lucide-react";
 
 type Lead = {
   id?: number;
@@ -29,6 +29,7 @@ export default function LeadModal({
 }) {
   const isEdit = !!lead?.id;
   const [loading, setLoading] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [form, setForm] = useState({
     nombre: lead?.nombre || "",
     telefono: lead?.telefono || "",
@@ -42,6 +43,38 @@ export default function LeadModal({
 
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function handleConvertir() {
+    if (!lead?.id) return;
+    setConverting(true);
+    try {
+      const resCliente = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: form.nombre || lead.nombre || "Sin nombre",
+          telefono: form.telefono || null,
+          instagram: form.instagram || null,
+          email: form.email || null,
+          origen: form.origen || null,
+          notas: form.notas || null,
+          estadoBusqueda: "activo",
+        }),
+      });
+      if (!resCliente.ok) throw new Error("Error creando cliente");
+      await fetch(`/api/leads/${lead.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, estado: "CONVERTIDO" }),
+      });
+      toast.success("Lead convertido a cliente");
+      onSaved();
+    } catch {
+      toast.error("Error al convertir");
+    } finally {
+      setConverting(false);
+    }
   }
 
   async function handleSave() {
@@ -122,15 +155,30 @@ export default function LeadModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition">Cancelar</button>
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear lead"}
-          </button>
+        <div className="flex justify-between gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <div>
+            {isEdit && (
+              <button
+                onClick={handleConvertir}
+                disabled={converting}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition disabled:opacity-50"
+                style={{ background: "#D1FAE5", color: "#065F46" }}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                {converting ? "Convirtiendo..." : "Convertir a cliente"}
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition">Cancelar</button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+            >
+              {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear lead"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

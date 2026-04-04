@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
+export async function GET() {
   const { data: propiedadesRaw, error } = await supabase
     .from("propiedades_inventario")
     .select("*, clientes!cliente_id(id, nombre), visitas_inventario(id)")
@@ -24,9 +19,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const body = await req.json();
 
   const { data: propiedad, error } = await supabase

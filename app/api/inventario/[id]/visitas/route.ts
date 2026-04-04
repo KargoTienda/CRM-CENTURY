@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const { data: visitasRaw, error } = await supabase
     .from("visitas_inventario")
     .select("*, clientes!cliente_id(id, nombre)")
@@ -20,9 +15,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const body = await req.json();
 
   const { data: visitaRaw, error } = await supabase
@@ -44,9 +36,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const { searchParams } = new URL(req.url);
   const visitaId = searchParams.get("visitaId");
   if (!visitaId) return NextResponse.json({ error: "visitaId requerido" }, { status: 400 });
