@@ -41,3 +41,12 @@ next-env.d.ts
 
 # prisma generated
 prisma/generated/
+
+# local environment variables, should not be committed to version control
+.env 
+
+.agents 
+
+.next 
+
+.claude 
