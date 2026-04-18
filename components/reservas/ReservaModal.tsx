@@ -15,12 +15,15 @@ type Reserva = {
   porcentajeParteCompradora?: number | null;
   porcentajeParteVendedora?: number | null;
   escribano?: boolean;
+  bonusEscribano?: number | null;
   comisionBruta?: number | null;
   comisionMia?: number | null;
   estado?: string;
   origen?: string | null;
   notas?: string | null;
   telefono?: string | null;
+  operacionCruzadaId?: number | null;
+  clienteId?: number | null;
 };
 
 // C21: la agente se lleva 25% de la comisión bruta (configurable)
@@ -30,20 +33,23 @@ function calcularComisiones(
   precio: number,
   pctCompradora: number,
   pctVendedora: number,
-  escribano: boolean
+  escribano: boolean,
+  bonusEscribano: number
 ) {
   const pctEscribano = escribano ? 0.5 : 0;
   const bruta = precio * ((pctCompradora + pctVendedora + pctEscribano) / 100);
-  const mia = bruta * SPLIT_AGENTE;
+  const mia = bruta * SPLIT_AGENTE + (escribano ? bonusEscribano : 0);
   return { bruta, mia };
 }
 
 export default function ReservaModal({
   reserva,
+  todasLasReservas,
   onClose,
   onSaved,
 }: {
   reserva: Reserva | null;
+  todasLasReservas: Reserva[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -59,17 +65,25 @@ export default function ReservaModal({
     pctCompradora: reserva?.porcentajeParteCompradora?.toString() || "3.5",
     pctVendedora: reserva?.porcentajeParteVendedora?.toString() || "3",
     escribano: reserva?.escribano || false,
+    bonusEscribano: reserva?.bonusEscribano?.toString() || "0",
     estado: reserva?.estado || "reservada",
     origen: reserva?.origen || "",
     notas: reserva?.notas || "",
     telefono: reserva?.telefono || "",
+    operacionCruzadaId: reserva?.operacionCruzadaId?.toString() || "",
   });
+
+  // Reservas del mismo cliente disponibles para vincular (excluye la actual)
+  const reservasVinculables = todasLasReservas.filter(
+    (r) => r.id !== reserva?.id && r.nombreCliente === form.nombreCliente
+  );
 
   // Calculated
   const precio = parseFloat(form.precioNegociado || form.valorReserva || "0") || 0;
   const pctC = parseFloat(form.pctCompradora) || 0;
   const pctV = parseFloat(form.pctVendedora) || 0;
-  const { bruta, mia } = calcularComisiones(precio, pctC, pctV, form.escribano);
+  const bonus = parseFloat(form.bonusEscribano) || 0;
+  const { bruta, mia } = calcularComisiones(precio, pctC, pctV, form.escribano, bonus);
 
   function update(field: string, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -90,8 +104,10 @@ export default function ReservaModal({
           porcentajeParteVendedora: parseFloat(form.pctVendedora) || null,
           valorReserva: parseFloat(form.valorReserva) || null,
           precioNegociado: parseFloat(form.precioNegociado) || null,
+          bonusEscribano: parseFloat(form.bonusEscribano) || 0,
           comisionBruta: bruta || null,
           comisionMia: mia || null,
+          operacionCruzadaId: form.operacionCruzadaId ? parseInt(form.operacionCruzadaId) : null,
         }),
       });
       if (!res.ok) throw new Error();
@@ -180,6 +196,19 @@ export default function ReservaModal({
                   <span className="text-sm text-gray-700">Puse el escribano (+0.5%)</span>
                 </label>
               </div>
+              {form.escribano && (
+                <div className="col-span-2">
+                  <label className={labelClass}>Bonus escribano (USD fijo)</label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    step="100"
+                    value={form.bonusEscribano}
+                    onChange={(e) => update("bonusEscribano", e.target.value)}
+                    placeholder="Ej: 500"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Calculadora */}
@@ -195,13 +224,46 @@ export default function ReservaModal({
                     <span className="text-gray-600">% Total ({pctC + pctV + (form.escribano ? 0.5 : 0)}%)</span>
                     <span className="font-medium">{formatMoney(bruta)}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Mi parte (25% de bruta)</span>
+                    <span className="font-medium">{formatMoney(bruta * SPLIT_AGENTE)}</span>
+                  </div>
+                  {form.escribano && bonus > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Bonus escribano</span>
+                      <span className="font-medium text-green-600">+ {formatMoney(bonus)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between border-t border-blue-200 pt-1">
-                    <span className="text-gray-700 font-medium">Mi comisión (25% de bruta)</span>
+                    <span className="text-gray-700 font-medium">Mi comisión total</span>
                     <span className="font-bold text-green-700">{formatMoney(mia)}</span>
                   </div>
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Operación cruzada */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Operación cruzada</h3>
+            <div>
+              <label className={labelClass}>Vincular con otra operación del mismo cliente</label>
+              <select
+                className={inputClass}
+                value={form.operacionCruzadaId}
+                onChange={(e) => update("operacionCruzadaId", e.target.value)}
+              >
+                <option value="">Sin vincular</option>
+                {reservasVinculables.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    #{r.id} — {r.tipoTransaccion} {r.zona ? `en ${r.zona}` : ""} ({r.estado})
+                  </option>
+                ))}
+              </select>
+              {reservasVinculables.length === 0 && form.nombreCliente && (
+                <p className="text-xs text-gray-400 mt-1">No hay otras reservas para {form.nombreCliente}</p>
+              )}
+            </div>
           </div>
 
           {/* Estado */}

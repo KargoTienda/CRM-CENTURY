@@ -17,8 +17,10 @@ export default async function ReservasPage() {
     precioNegociado: r.precio_negociado,
     porcentajeParteCompradora: r.porcentaje_parte_compradora,
     porcentajeParteVendedora: r.porcentaje_parte_vendedora,
+    bonusEscribano: r.bonus_escribano,
     comisionBruta: r.comision_bruta,
     comisionMia: r.comision_mia,
+    operacionCruzadaId: r.operacion_cruzada_id,
     fechaReserva: r.fecha_reserva,
     fechaEscritura: r.fecha_escritura,
     creadoEn: r.creado_en,
@@ -30,7 +32,7 @@ export default async function ReservasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>Reservas</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: "#1A1A1A", letterSpacing: "-0.02em" }}>Reservas</h1>
           <p className="text-sm mt-1" style={{ color: "#8A8799" }}>{reservas.length} reservas registradas</p>
         </div>
       </div>

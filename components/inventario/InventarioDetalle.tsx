@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
-  Building2,
-  Calendar,
-  Edit,
   ExternalLink,
   MessageCircle,
   Plus,
-  Star,
   Trash2,
   User,
 } from "lucide-react";
 import { formatMoney, formatDate, whatsappLink } from "@/lib/utils";
+
+const DownloadReportePropietario = dynamic(
+  () => import("./ReportePropietarioPDF"),
+  { ssr: false, loading: () => <button className="px-4 py-2 rounded-xl text-sm font-semibold opacity-50" style={{ background: "#BEAF87", color: "#3C3A3C" }}>Cargando PDF...</button> }
+);
 
 type Visita = {
   id: number;
@@ -149,17 +151,20 @@ export default function InventarioDetalle({
             <p className="text-gray-500 text-sm mt-1">{propiedad.direccion}{propiedad.barrio ? `, ${propiedad.barrio}` : ""}</p>
           </div>
         </div>
-        {propiedad.linkPortal && (
-          <a
-            href={propiedad.linkPortal}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Ver en portal
-          </a>
-        )}
+        <div className="flex items-center gap-2">
+          <DownloadReportePropietario propiedad={propiedad} visitas={visitas} />
+          {propiedad.linkPortal && (
+            <a
+              href={propiedad.linkPortal}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Ver en portal
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

@@ -26,7 +26,7 @@ export default async function LeadsInstagramPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold" style={{ color: "#EDEAE3", letterSpacing: "-0.02em" }}>Leads Instagram</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: "#1A1A1A", letterSpacing: "-0.02em" }}>Leads Instagram</h1>
         <p className="text-sm mt-1" style={{ color: "#8A8799" }}>Leads de pautas publicitarias en Instagram</p>
       </div>
       <LeadsClient leads={leads} origen="INSTAGRAM_PAUTA" />

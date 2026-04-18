@@ -59,16 +59,8 @@ export default async function InventarioPage() {
               className="rounded-2xl p-5 block transition-all duration-200 hover:-translate-y-1"
               style={{
                 background: "#FFFFFF",
-                border: "1px solid #D0E8F5",
-                boxShadow: "0 1px 4px rgba(0,119,182,0.06)",
-              }}
-              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                e.currentTarget.style.borderColor = "#00B4D8";
-                e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,119,182,0.12)";
-              }}
-              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                e.currentTarget.style.borderColor = "#D0E8F5";
-                e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,119,182,0.06)";
+                border: "1px solid #DDD9D0",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
               }}
             >
               <div className="flex items-start justify-between mb-3">

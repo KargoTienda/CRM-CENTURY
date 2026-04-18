@@ -16,11 +16,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       porcentaje_parte_compradora: body.porcentajeParteCompradora ? parseFloat(body.porcentajeParteCompradora) : null,
       porcentaje_parte_vendedora: body.porcentajeParteVendedora ? parseFloat(body.porcentajeParteVendedora) : null,
       escribano: body.escribano || false,
+      bonus_escribano: body.bonusEscribano ? parseFloat(body.bonusEscribano) : 0,
       comision_bruta: body.comisionBruta ? parseFloat(body.comisionBruta) : null,
       comision_mia: body.comisionMia ? parseFloat(body.comisionMia) : null,
       estado: body.estado || "reservada",
       origen: body.origen || null,
       notas: body.notas || null,
+      operacion_cruzada_id: body.operacionCruzadaId ? parseInt(body.operacionCruzadaId) : null,
     })
     .eq("id", parseInt(params.id))
     .select()

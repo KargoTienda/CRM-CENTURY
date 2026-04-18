@@ -15,7 +15,6 @@ import {
   FileText,
   Upload,
   LogOut,
-  Waves,
 } from "lucide-react";
 
 const navItems = [
@@ -35,39 +34,32 @@ export default function Sidebar() {
   return (
     <aside
       className="fixed inset-y-0 left-0 w-60 flex flex-col z-50"
-      style={{ background: "linear-gradient(180deg, #023E8A 0%, #0077B6 70%, #0096C7 100%)" }}
+      style={{ background: "linear-gradient(180deg, #2A282A 0%, #3C3A3C 60%, #4A484A 100%)" }}
     >
-      {/* Decorative wave overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse 120% 80% at 50% 110%, #48CAE4 0%, transparent 60%)",
-        }}
-      />
+      {/* Subtle gold top border */}
+      <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: "linear-gradient(90deg, #BEAF87, #D4C9A8, #BEAF87)" }} />
 
       {/* Logo */}
       <div
-        className="relative px-5 py-6"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}
+        className="relative px-5 py-5"
+        style={{ borderBottom: "1px solid rgba(190,175,135,0.15)" }}
       >
         <div className="flex items-center gap-3">
+          {/* C21 Logo mark */}
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{
-              background: "rgba(255,255,255,0.2)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,0.3)",
-            }}
+            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: "#BEAF87" }}
           >
-            <Waves className="w-4 h-4 text-white" />
+            <span className="font-bold text-sm" style={{ color: "#3C3A3C", letterSpacing: "-0.02em", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>
+              C21
+            </span>
           </div>
           <div>
-            <p className="font-bold text-sm text-white" style={{ letterSpacing: "0.02em" }}>
-              CRM
+            <p className="font-semibold text-sm" style={{ color: "#E6E7E8", letterSpacing: "0.02em" }}>
+              CENTURY 21
             </p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-              Inmobiliario
+            <p className="text-xs" style={{ color: "#BEAF87" }}>
+              CRM Inmobiliario
             </p>
           </div>
         </div>
@@ -77,7 +69,7 @@ export default function Sidebar() {
       <nav className="relative flex-1 overflow-y-auto py-4 px-3">
         <p
           className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
-          style={{ color: "rgba(255,255,255,0.35)" }}
+          style={{ color: "rgba(190,175,135,0.5)" }}
         >
           Menú
         </p>
@@ -105,11 +97,11 @@ export default function Sidebar() {
 
         <div
           className="mt-5 pt-4"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+          style={{ borderTop: "1px solid rgba(190,175,135,0.1)" }}
         >
           <p
             className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "rgba(190,175,135,0.5)" }}
           >
             Admin
           </p>
@@ -129,7 +121,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div
         className="relative px-3 py-4"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+        style={{ borderTop: "1px solid rgba(190,175,135,0.1)" }}
       >
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}

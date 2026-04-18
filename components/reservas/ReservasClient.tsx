@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate, formatMoney } from "@/lib/utils";
-import { Plus } from "lucide-react";
+import { Plus, Link2, PenLine } from "lucide-react";
 import ReservaModal from "./ReservaModal";
 
 type Reserva = {
   id: number; nombreCliente: string; tipoTransaccion: string; zona: string | null;
   valorReserva: number | null; precioNegociado: number | null;
   porcentajeParteCompradora: number | null; porcentajeParteVendedora: number | null;
-  escribano: boolean; comisionBruta: number | null; comisionMia: number | null;
+  escribano: boolean; bonusEscribano: number | null; comisionBruta: number | null; comisionMia: number | null;
   estado: string; fechaReserva: Date; origen: string | null; notas: string | null;
-  telefono: string | null; clienteId: number | null;
+  telefono: string | null; clienteId: number | null; operacionCruzadaId: number | null;
   cliente: { id: number; nombre: string } | null;
 };
 
@@ -35,9 +35,9 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
     .reduce((acc, r) => acc + (r.comisionMia || 0), 0);
 
   const statCards = [
-    { label: "Reservas activas", value: reservas.filter((r) => ["reservada","en_escritura"].includes(r.estado)).length, color: "#0077B6", bg: "#DBEAFE" },
-    { label: "Escrituradas", value: reservas.filter((r) => r.estado === "escriturada").length, color: "#065F46", bg: "#D1FAE5" },
-    { label: "Comisiones por cobrar", value: formatMoney(totalComisiones), color: "#0077B6", bg: "#EEF6FF", highlight: true },
+    { label: "Reservas activas", value: reservas.filter((r) => ["reservada","en_escritura"].includes(r.estado)).length, color: "#3C3A3C", bg: "#F2F1EF" },
+    { label: "Escrituradas", value: reservas.filter((r) => r.estado === "escriturada").length, color: "#4A7C59", bg: "#EDFAF2" },
+    { label: "Comisiones por cobrar", value: formatMoney(totalComisiones), color: "#BEAF87", bg: "#FAF8F3", highlight: true },
   ];
 
   return (
@@ -48,10 +48,10 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
           <div
             key={s.label}
             className="rounded-2xl p-5"
-            style={{ background: "#FFFFFF", border: "1px solid #D0E8F5", boxShadow: "0 1px 4px rgba(0,119,182,0.06)" }}
+            style={{ background: "#FFFFFF", border: "1px solid #DDD9D0", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
           >
-            <p className="text-xs font-medium mb-2" style={{ color: "#90AFCC" }}>{s.label}</p>
-            <p className="text-2xl font-bold tracking-tight" style={{ color: s.highlight ? "#0077B6" : "#023E8A" }}>
+            <p className="text-xs font-medium mb-2" style={{ color: "#808285" }}>{s.label}</p>
+            <p className="text-2xl font-bold tracking-tight" style={{ color: s.highlight ? "#BEAF87" : "#3C3A3C" }}>
               {s.value}
             </p>
           </div>
@@ -85,15 +85,15 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
       {/* Table */}
       <div
         className="rounded-2xl overflow-hidden"
-        style={{ background: "#FFFFFF", border: "1px solid #D0E8F5", boxShadow: "0 1px 4px rgba(0,119,182,0.06)" }}
+        style={{ background: "#FFFFFF", border: "1px solid #DDD9D0", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: "#F0F8FF", borderBottom: "1px solid #D0E8F5" }}>
+              <tr style={{ background: "#F8F7F5", borderBottom: "1px solid #DDD9D0" }}>
                 {["Fecha","Cliente","Transacción","Zona","Valor","Comisión bruta","Mi comisión","Estado",""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: "#90AFCC" }}>
+                    style={{ color: "#808285" }}>
                     {h}
                   </th>
                 ))}
@@ -112,26 +112,30 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
                 return (
                   <tr
                     key={r.id}
-                    className="transition-colors hover:bg-[#F0F8FF]"
-                    style={i > 0 ? { borderTop: "1px solid #EEF6FF" } : {}}
+                    className="transition-colors hover:bg-[#FAF8F3]"
+                    style={i > 0 ? { borderTop: "1px solid #F2F1EF" } : {}}
                   >
-                    <td className="px-4 py-3.5 text-xs" style={{ color: "#90AFCC" }}>{formatDate(r.fechaReserva)}</td>
-                    <td className="px-4 py-3.5 font-bold text-sm" style={{ color: "#023E8A" }}>{r.nombreCliente}</td>
-                    <td className="px-4 py-3.5 text-xs capitalize" style={{ color: "#0096C7" }}>{r.tipoTransaccion}</td>
-                    <td className="px-4 py-3.5 text-xs" style={{ color: "#0096C7" }}>{r.zona || "—"}</td>
-                    <td className="px-4 py-3.5 text-xs font-medium" style={{ color: "#0077B6" }}>{formatMoney(r.precioNegociado || r.valorReserva)}</td>
-                    <td className="px-4 py-3.5 text-xs" style={{ color: "#90AFCC" }}>{formatMoney(r.comisionBruta)}</td>
-                    <td className="px-4 py-3.5 text-sm font-bold" style={{ color: "#0077B6" }}>{formatMoney(r.comisionMia)}</td>
+                    <td className="px-4 py-3.5 text-xs" style={{ color: "#808285" }}>{formatDate(r.fechaReserva)}</td>
+                    <td className="px-4 py-3.5 font-bold text-sm" style={{ color: "#1A1A1A" }}>
+                      <div className="flex items-center gap-1.5">
+                        {r.nombreCliente}
+                        {r.escribano && <PenLine className="w-3.5 h-3.5 text-amber-600" title="Aportó escribano" />}
+                        {r.operacionCruzadaId && <Link2 className="w-3.5 h-3.5" style={{ color: "#BEAF87" }} title={`Operación cruzada #${r.operacionCruzadaId}`} />}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs capitalize" style={{ color: "#5A585A" }}>{r.tipoTransaccion}</td>
+                    <td className="px-4 py-3.5 text-xs" style={{ color: "#5A585A" }}>{r.zona || "—"}</td>
+                    <td className="px-4 py-3.5 text-xs font-medium" style={{ color: "#3C3A3C" }}>{formatMoney(r.precioNegociado || r.valorReserva)}</td>
+                    <td className="px-4 py-3.5 text-xs" style={{ color: "#808285" }}>{formatMoney(r.comisionBruta)}</td>
+                    <td className="px-4 py-3.5 text-sm font-bold" style={{ color: "#BEAF87" }}>{formatMoney(r.comisionMia)}</td>
                     <td className="px-4 py-3.5">
                       <span className="badge" style={badge}>{r.estado.replace("_", " ")}</span>
                     </td>
                     <td className="px-4 py-3.5">
                       <button
                         onClick={() => { setEditing(r); setShowModal(true); }}
-                        className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
-                        style={{ color: "#0077B6", background: "#EEF6FF", border: "1px solid #D0E8F5" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#DBEAFE"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#EEF6FF"; }}
+                        className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:opacity-80"
+                        style={{ color: "#BEAF87", background: "rgba(190,175,135,0.12)", border: "1px solid rgba(190,175,135,0.3)" }}
                       >
                         Editar
                       </button>
@@ -147,6 +151,7 @@ export default function ReservasClient({ reservas }: { reservas: Reserva[] }) {
       {showModal && (
         <ReservaModal
           reserva={editing}
+          todasLasReservas={reservas}
           onClose={() => setShowModal(false)}
           onSaved={() => { setShowModal(false); router.refresh(); }}
         />

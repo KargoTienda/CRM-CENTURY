@@ -188,10 +188,8 @@ export default function ClientesTable({
                     <td className="px-4 py-3.5">
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingCliente(c); setShowModal(true); }}
-                        className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
-                        style={{ color: "#0077B6", background: "#EEF6FF", border: "1px solid #D0E8F5" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#DBEAFE"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#EEF6FF"; }}
+                        className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:opacity-80"
+                        style={{ color: "#BEAF87", background: "rgba(190,175,135,0.12)", border: "1px solid rgba(190,175,135,0.3)" }}
                       >
                         Editar
                       </button>

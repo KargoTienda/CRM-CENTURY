@@ -11,6 +11,11 @@ import {
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 
+const DownloadBusquedaPDF = dynamic(
+  () => import("./BusquedaPDF"),
+  { ssr: false, loading: () => <button className="px-3 py-2 rounded-xl text-xs font-semibold opacity-50" style={{ background: "#BEAF87", color: "#3C3A3C" }}>Cargando PDF...</button> }
+);
+
 const ZonaMapSelector = dynamic(() => import("@/components/busquedas/ZonaMapSelector"), {
   ssr: false,
   loading: () => <div className="h-80 rounded-2xl skeleton" />,
@@ -264,6 +269,7 @@ export default function BusquedaDetalle({ busqueda }: { busqueda: Busqueda }) {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
+            <DownloadBusquedaPDF busqueda={busqueda} propiedades={busqueda.propiedades} />
             <button
               onClick={() => setShowEdit(true)}
               className="btn-secondary text-xs px-3 py-2 rounded-xl"
